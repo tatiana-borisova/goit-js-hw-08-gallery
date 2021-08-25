@@ -62,87 +62,94 @@ const galleryItems = [
       'https://cdn.pixabay.com/photo/2019/05/17/04/35/lighthouse-4208843_1280.jpg',
     description: 'Lighthouse Coast Sea',
   },
-];
+]
 
-const paletteEl = document.querySelector('.gallery');
-const cardsMarkup = createMarkup(galleryItems);
-const modal = document.querySelector('.lightbox');
-const closeModalBtn = document.querySelector('[data-action="close-lightbox"]');
-const modalImgEl = document.querySelector('.lightbox__image');
-const overlayEl = document.querySelector('.lightbox__overlay');
+// Объявление доступов
+const list = document.querySelector('.js-gallery')
+const modal = document.querySelector('.js-lightbox')
+const modalImg = document.querySelector('.lightbox__image')
+const modalBtnClose = document.querySelector('[data-action="close-lightbox"]')
+const modalOverlay = document.querySelector('.lightbox__overlay')
 
-paletteEl.insertAdjacentHTML('beforeend', cardsMarkup);
-paletteEl.addEventListener('click', onPaletteContainerClick);
-closeModalBtn.addEventListener('click', onCloseModal)
-overlayEl.addEventListener('click', onCloseModal)
+// Создание галереи
+galleryItems.forEach(({ preview, original, description }) => {
+  const item = document.createElement('li')
+  const itemLink = document.createElement('a')
+  const itemImg = document.createElement('img')
+  list.appendChild(item)
+  item.appendChild(itemLink)
+  itemLink.appendChild(itemImg)
+  itemImg.setAttribute('src', preview)
+  itemImg.setAttribute('alt', description)
+  item.classList.add('gallery__item')
+  itemLink.classList.add('gallery__link')
+  itemImg.classList.add('gallery__image')
+})
 
+// Слушатели событий
+list.addEventListener('click', e => {
+  const scroll = openModal(e)
+  window.addEventListener('keydown', scroll)
 
-function createMarkup(gallery) {
-  let indexOfImg = 0;
-  return gallery.map(({ preview, original, description }) => {
-    return `
-      <li class="gallery__item">
-        <a
-          class="gallery__link"
-          href="${original}"
-        >
-          <img
-            loading="lazy"
-            class="gallery__image"
-            src="${preview}"
-            data-source="${original}"
-            data-index="${indexOfImg += 1}"
-            alt="${description}"
-          />
-        </a>
-      </li>
-    `;
-  }).join('');
-};
+  modalBtnClose.addEventListener('click', closeModal)
 
-function onPaletteContainerClick(event) {
-  event.preventDefault();
-  if (!event.target.classList.contains('gallery__image')) {
-    return;
-  }
-  onOpenModal(event.target)
+  modalOverlay.addEventListener('click', closeModal)
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeModal()
+      console.log('not closed')
+    }
+  })
+})
+
+// Функции
+function getImgData(img) {
+  return galleryItems.find(({ preview }) => preview === img.target.src)
 }
 
-function onOpenModal(img) {
-  window.addEventListener('keydown', onKeyDown)
-  modal.classList.add('is-open');
-  modalImgEl.src = img.dataset.source;
-  modalImgEl.alt = img.alt;
-  modalImgEl.dataset.index = img.dataset.index;
+function getImgDataId(imgData) {
+  return galleryItems.indexOf(imgData)
 }
 
-function onCloseModal() {
-  window.removeEventListener('keydown', onKeyDown);
-  modal.classList.remove('is-open');
-  modalImgEl.src = '';
+function closeModal() {
+  modal.classList.remove('is-open')
+  modalImg.setAttribute('src', '')
+  modalImg.setAttribute('alt', '')
+
+  window.removeEventListener('keydown', scroll)
+  modalBtnClose.removeEventListener('click', closeModal)
+  modalOverlay.removeEventListener('click', closeModal)
+  window.removeEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      closeModal()
+      console.log('not closed')
+    }
+  })
 }
 
-function swipe(count) {
-  const index = modalImgEl.dataset.index;
-  const nextIndex = Number(index) + count;
-  const nextEl = document.querySelector(`[data-index="${nextIndex}"]`);
-  if (!nextEl) {
-    return;
+function openModal(e) {
+  modal.classList.add('is-open')
+  const imgData = getImgData(e)
+  modalImg.setAttribute('src', imgData.original)
+  modalImg.setAttribute('alt', imgData.description)
+  let imgDataId = getImgDataId(imgData)
+  return function scroll(e) {
+    console.log(galleryItems[imgDataId])
+    if (e.key === 'ArrowRight') {
+      imgDataId += 1
+      if (imgDataId >= galleryItems.length) {
+        imgDataId = 0
+      }
+    }
+    if (e.key === 'ArrowLeft') {
+      imgDataId -= 1
+      if (imgDataId < 0) {
+        imgDataId = galleryItems.length - 1
+      }
+    }
+    console.log(imgDataId)
+    modalImg.setAttribute('src', galleryItems[imgDataId].original)
+    modalImg.setAttribute('alt', galleryItems[imgDataId].description)
   }
-  modalImgEl.src = nextEl.dataset.source;
-  modalImgEl.alt = nextEl.alt;
-  modalImgEl.dataset.index = nextEl.dataset.index;
 }
-
-function onKeyDown(event) {
-  if (event.code === 'Escape') {
-    onCloseModal();
-  }
-  if (event.code === 'ArrowRight') {
-    swipe(1);
-  }
-  if (event.code === 'ArrowLeft') {
-    swipe(-1);
-  }
-}
-
