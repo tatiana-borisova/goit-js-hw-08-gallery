@@ -118,10 +118,8 @@ function onOpenModal(img) {
   currentIndex = Number(img.dataset.index);
 }
 
-function onCloseModal() {
-  window.removeEventListener('keydown', onKeyDown);
-  modal.classList.remove('is-open');
-  modalImgEl.src = '';
+function getImgDataId(imgData) {
+  return galleryItems.indexOf(imgData);
 }
 
 function swipeRight() {
