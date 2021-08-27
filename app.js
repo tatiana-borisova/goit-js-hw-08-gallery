@@ -70,17 +70,17 @@ const modal = document.querySelector('.lightbox');
 const closeModalBtn = document.querySelector('[data-action="close-lightbox"]');
 const modalImgEl = document.querySelector('.lightbox__image');
 const overlayEl = document.querySelector('.lightbox__overlay');
+let currentIndex = 0;
 
 paletteEl.insertAdjacentHTML('beforeend', cardsMarkup);
 paletteEl.addEventListener('click', onPaletteContainerClick);
-closeModalBtn.addEventListener('click', onCloseModal)
-overlayEl.addEventListener('click', onCloseModal)
-
+closeModalBtn.addEventListener('click', onCloseModal);
+overlayEl.addEventListener('click', onCloseModal);
 
 function createMarkup(gallery) {
-  let indexOfImg = 0;
-  return gallery.map(({ preview, original, description }) => {
-    return `
+  return gallery
+    .map(({ preview, original, description }, index) => {
+      return `
       <li class="gallery__item">
         <a
           class="gallery__link"
@@ -91,29 +91,31 @@ function createMarkup(gallery) {
             class="gallery__image"
             src="${preview}"
             data-source="${original}"
-            data-index="${indexOfImg += 1}"
+            data-index="${index}"
             alt="${description}"
           />
         </a>
       </li>
     `;
-  }).join('');
-};
+    })
+    .join('');
+}
 
 function onPaletteContainerClick(event) {
   event.preventDefault();
   if (!event.target.classList.contains('gallery__image')) {
     return;
   }
-  onOpenModal(event.target)
+  onOpenModal(event.target);
 }
 
 function onOpenModal(img) {
-  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('keydown', onKeyDown);
   modal.classList.add('is-open');
   modalImgEl.src = img.dataset.source;
   modalImgEl.alt = img.alt;
   modalImgEl.dataset.index = img.dataset.index;
+  currentIndex = Number(img.dataset.index);
 }
 
 function onCloseModal() {
@@ -122,16 +124,22 @@ function onCloseModal() {
   modalImgEl.src = '';
 }
 
-function swipe(count) {
-  const index = modalImgEl.dataset.index;
-  const nextIndex = Number(index) + count;
-  const nextEl = document.querySelector(`[data-index="${nextIndex}"]`);
-  if (!nextEl) {
-    return;
+function swipeRight() {
+  currentIndex += 1;
+  if (currentIndex >= galleryItems.length) {
+    currentIndex = 0;
   }
-  modalImgEl.src = nextEl.dataset.source;
-  modalImgEl.alt = nextEl.alt;
-  modalImgEl.dataset.index = nextEl.dataset.index;
+  modalImgEl.src = galleryItems[currentIndex].original;
+  modalImgEl.alt = galleryItems[currentIndex].description;
+}
+
+function swipeLeft() {
+  currentIndex -= 1;
+  if (currentIndex < 0) {
+    currentIndex = galleryItems.length - 1;
+  }
+  modalImgEl.src = galleryItems[currentIndex].original;
+  modalImgEl.alt = galleryItems[currentIndex].description;
 }
 
 function onKeyDown(event) {
@@ -139,10 +147,9 @@ function onKeyDown(event) {
     onCloseModal();
   }
   if (event.code === 'ArrowRight') {
-    swipe(1);
+    swipeRight();
   }
   if (event.code === 'ArrowLeft') {
-    swipe(-1);
+    swipeLeft();
   }
 }
-
